@@ -1,0 +1,236 @@
+@model ARBusinessCard.Models.DashboardViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <a class="nav-brand" asp-action="Index" asp-controller="Dashboard">
+        <div class="logo-icon"><i class="fas fa-address-card"></i></div>
+        AR CARD
+    </a>
+    <div class="nav-links">
+        <a class="nav-link active" asp-action="Index" asp-controller="Dashboard">
+            <i class="fas fa-th-large"></i> Dashboard
+        </a>
+        <a class="nav-link" asp-action="Create" asp-controller="Card">
+            <i class="fas fa-plus"></i> New Card
+        </a>
+    </div>
+    <div class="nav-user">
+        <div class="user-chip"><i class="fas fa-user"></i> @Model.CurrentUser.FullName</div>
+        <a asp-action="Logout" asp-controller="Account" class="btn btn-ghost btn-sm">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+    </div>
+</nav>
+
+<div class="page-wrapper">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success animate-in">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+
+    <!-- Page Header -->
+    <div class="page-header animate-in" style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+            <div class="page-title">My Dashboard</div>
+            <div class="page-subtitle">Manage your AR business cards</div>
+        </div>
+        <a asp-action="Create" asp-controller="Card" class="btn btn-primary">
+            <i class="fas fa-plus"></i> CREATE CARD
+        </a>
+    </div>
+
+    <!-- Stats Row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-bottom:2rem;">
+
+        <div class="stat-card animate-in">
+            <div class="stat-glow" style="background:var(--cyan);"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="width:42px;height:42px;border-radius:10px;background:var(--cyan-dim);display:flex;align-items:center;justify-content:center;color:var(--cyan);">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <span style="font-size:0.7rem;color:var(--green);letter-spacing:1px;background:rgba(16,185,129,0.1);padding:3px 10px;border-radius:20px;">ACTIVE</span>
+            </div>
+            <div class="stat-value" style="color:var(--cyan);">@Model.TotalCards</div>
+            <div class="stat-label">Total Cards</div>
+        </div>
+
+        <div class="stat-card animate-in">
+            <div class="stat-glow" style="background:var(--violet);"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="width:42px;height:42px;border-radius:10px;background:var(--violet-dim);display:flex;align-items:center;justify-content:center;color:#a78bfa;">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <span style="font-size:0.7rem;color:#a78bfa;letter-spacing:1px;background:var(--violet-dim);padding:3px 10px;border-radius:20px;">ALL TIME</span>
+            </div>
+            <div class="stat-value" style="color:#a78bfa;">@Model.TotalScans</div>
+            <div class="stat-label">QR Scans</div>
+        </div>
+
+        <div class="stat-card animate-in">
+            <div class="stat-glow" style="background:var(--gold);"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="width:42px;height:42px;border-radius:10px;background:rgba(245,158,11,0.1);display:flex;align-items:center;justify-content:center;color:var(--gold);">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <span style="font-size:0.7rem;color:var(--gold);letter-spacing:1px;background:rgba(245,158,11,0.1);padding:3px 10px;border-radius:20px;">MEMBER</span>
+            </div>
+            <div class="stat-value" style="color:var(--gold);">@Model.CurrentUser.Username</div>
+            <div class="stat-label">Your Account</div>
+        </div>
+
+    </div>
+
+    <!-- Cards List -->
+    <div class="glass-card animate-in">
+        <div style="padding:1.5rem 1.5rem 1rem;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+            <div>
+                <div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:2px;color:#fff;">MY CARDS</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">@Model.TotalCards card(s) created</div>
+            </div>
+            <a asp-action="Create" asp-controller="Card" class="btn btn-ghost btn-sm">
+                <i class="fas fa-plus"></i> New
+            </a>
+        </div>
+
+        @if (!Model.Cards.Any())
+        {
+            <div style="padding:4rem;text-align:center;">
+                <div style="font-size:4rem;margin-bottom:1rem;opacity:0.3;">📇</div>
+                <div style="font-family:var(--font-display);font-size:0.9rem;letter-spacing:2px;color:var(--text-muted);">NO CARDS YET</div>
+                <div style="color:var(--text-muted);font-size:0.82rem;margin:0.5rem 0 1.5rem;">Create your first AR business card to get started</div>
+                <a asp-action="Create" asp-controller="Card" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> CREATE FIRST CARD
+                </a>
+            </div>
+        }
+        else
+        {
+            @foreach (var card in Model.Cards)
+            {
+                <div class="card-list-item animate-in" id="card-item-@card.CardId">
+                    <!-- QR -->
+                    <div class="qr-wrap">
+                        @if (!string.IsNullOrEmpty(card.QRCodePath))
+                        {
+                            <img src="@card.QRCodePath" alt="QR" />
+                        }
+                        else
+                        {
+                            <div style="color:var(--text-muted);font-size:1.5rem;">⬛</div>
+                        }
+                    </div>
+
+                    <!-- Card Mini Preview -->
+                    <div class="biz-card theme-@card.CardTheme" style="width:160px;height:95px;padding:14px;flex-shrink:0;border-radius:12px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-size:0.9rem;">
+                                @(card.AvatarStyle == "style1" ? "🧑" : card.AvatarStyle == "style2" ? "👩" : card.AvatarStyle == "style3" ? "🧑‍💼" : "🧑‍🎨")
+                            </div>
+                            <div>
+                                <div style="font-family:var(--font-display);font-size:0.5rem;letter-spacing:1px;color:var(--cyan);">@card.FullName.Split(' ')[0].ToUpper()</div>
+                                <div style="font-size:0.5rem;color:var(--text-muted);">@card.JobTitle</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;font-size:0.45rem;color:var(--text-muted);">@card.Email</div>
+                    </div>
+
+                    <!-- Info -->
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-family:var(--font-display);font-size:0.85rem;letter-spacing:1.5px;color:#fff;">@card.CardTitle</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">@card.FullName</div>
+                        @if (!string.IsNullOrEmpty(card.JobTitle))
+                        {
+                            <div style="font-size:0.75rem;color:var(--text-muted);">@card.JobTitle @(!string.IsNullOrEmpty(card.Company) ? $"@ {card.Company}" : "")</div>
+                        }
+                        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                            <span style="font-size:0.7rem;color:var(--text-muted);">
+                                <i class="fas fa-calendar" style="margin-right:4px;color:var(--cyan);opacity:0.6;"></i>
+                                @card.CreatedAt.ToString("dd MMM yyyy")
+                            </span>
+                            <span style="font-size:0.7rem;color:#a78bfa;">
+                                <i class="fas fa-qrcode" style="margin-right:4px;"></i>
+                                @card.ScanCount scans
+                            </span>
+                            <span class="theme-badge" data-theme="@card.CardTheme" style="font-size:0.65rem;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:1px;">
+                                @card.CardTheme
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display:flex;gap:8px;flex-shrink:0;">
+                        <a href="/c/@card.UniqueSlug"
+                           target="_blank" class="btn btn-ghost btn-sm" title="View AR Card">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a asp-action="Edit" asp-controller="Card" asp-route-id="@card.CardId"
+                           class="btn btn-primary btn-sm" title="Edit Card">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a asp-action="Download" asp-controller="Card" asp-route-id="@card.CardId"
+                           class="btn btn-ghost btn-sm" title="Download QR">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        <button onclick="deleteCard(@card.CardId)" class="btn btn-danger btn-sm" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+</div>
+
+<style>
+    .theme-badge[data-theme="cyber"] {
+        background: var(--cyan-dim);
+        color: var(--cyan);
+        border: 1px solid rgba(0,220,255,0.2);
+    }
+
+    .theme-badge[data-theme="neon"] {
+        background: var(--violet-dim);
+        color: #a78bfa;
+        border: 1px solid rgba(124,58,237,0.2);
+    }
+
+    .theme-badge[data-theme="gold"] {
+        background: rgba(245,158,11,0.1);
+        color: var(--gold);
+        border: 1px solid rgba(245,158,11,0.2);
+    }
+
+    .theme-badge[data-theme="matrix"] {
+        background: rgba(16,185,129,0.1);
+        color: var(--green);
+        border: 1px solid rgba(16,185,129,0.2);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function deleteCard(id) {
+          if (!confirm('Delete this card? This cannot be undone.')) return;
+          fetch('/Card/Delete/' + id, { method: 'POST', headers: { 'RequestVerificationToken': document.querySelector('[name=__RequestVerificationToken]')?.value || '' } })
+            .then(r => r.json())
+            .then(d => {
+              if (d.success) {
+                const el = document.getElementById('card-item-' + id);
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(50px)';
+                el.style.transition = 'all 0.3s';
+                setTimeout(() => { el.remove(); }, 300);
+              }
+            });
+        }
+    </script>
+    @Html.AntiForgeryToken()
+}

@@ -1,0 +1,541 @@
+@model ARBusinessCard.Models.CardViewModel
+@{
+    bool isEdit = Model.CardId > 0;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = isEdit ? "Edit Card" : "Create Card";
+}
+
+<style>
+.creator-layout {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 1.5rem;
+}
+
+.section-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Avatar Picker */
+.avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.avatar-option { font-size: 1.8rem; }
+
+/* Color Swatch Grid */
+.swatch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Preview Card (right panel) */
+.preview-panel { position: sticky; top: 80px; }
+
+.live-card {
+  width: 100%;
+  height: 200px;
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s;
+  cursor: default;
+}
+
+.live-card .scan-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scanLine 2.5s linear infinite;
+}
+
+.live-card .corner-glow {
+  position: absolute;
+  bottom: -20px; right: -20px;
+  width: 100px; height: 100px;
+  background: radial-gradient(circle, rgba(0,220,255,0.2), transparent 70%);
+  border-radius: 50%;
+}
+
+.avatar-3d {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(0,220,255,0.3);
+  animation: avatarFloat 3s ease-in-out infinite;
+}
+
+/* avatarFloat defined in site.css */
+
+.social-icons-preview { display: flex; gap: 8px; margin-top: 12px; }
+.social-icon-dot {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem;
+  transition: all 0.2s;
+}
+
+/* Tab nav */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+}
+.tab-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid rgba(0,220,255,0.2);
+}
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Form 2-col grid */
+.form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+/* Skin tone picker */
+.skin-row { display: flex; gap: 8px; }
+.skin-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+.skin-dot.selected { border-color: white; transform: scale(1.2); }
+</style>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-brand" asp-action="Index" asp-controller="Dashboard">
+    <div class="logo-icon"><i class="fas fa-address-card"></i></div>
+    AR CARD
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" asp-action="Index" asp-controller="Dashboard">
+      <i class="fas fa-th-large"></i> Dashboard
+    </a>
+    <a class="nav-link active" href="#">
+      <i class="fas fa-@(isEdit ? "edit" : "plus")"></i> @(isEdit ? "Edit" : "Create") Card
+    </a>
+  </div>
+  <div class="nav-user">
+    <div class="user-chip"><i class="fas fa-user"></i> @Context.Session.GetString("UserName")</div>
+    <a asp-action="Logout" asp-controller="Account" class="btn btn-ghost btn-sm">
+      <i class="fas fa-sign-out-alt"></i>
+    </a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <div class="page-header animate-in">
+    <div class="page-title">@(isEdit ? "EDIT CARD" : "CREATE CARD")</div>
+    <div class="page-subtitle">@(isEdit ? "Update your AR business card" : "Design your personalized AR business card")</div>
+  </div>
+
+  <form asp-action="@(isEdit ? "Edit" : "Create")" asp-controller="Card"
+        method="post" enctype="multipart/form-data" id="cardForm">
+    @Html.AntiForgeryToken()
+    @if (isEdit) { <input type="hidden" asp-for="CardId" /> }
+    <input type="hidden" asp-for="AvatarStyle" id="avatarStyleInput" />
+    <input type="hidden" asp-for="AvatarSkinTone" id="skinToneInput" />
+    <input type="hidden" asp-for="AvatarHair" id="avatarHairInput" />
+    <input type="hidden" asp-for="AvatarOutfit" id="avatarOutfitInput" />
+    <input type="hidden" asp-for="CardTheme" id="cardThemeInput" />
+    @if (isEdit) { <input type="hidden" asp-for="ExistingPhoto" /> }
+
+    <div class="creator-layout">
+
+      <!-- LEFT: Form -->
+      <div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav animate-in">
+          <button type="button" class="tab-btn active" onclick="switchTab('info',this)">
+            <i class="fas fa-user"></i> Info
+          </button>
+          <button type="button" class="tab-btn" onclick="switchTab('avatar',this)">
+            <i class="fas fa-robot"></i> Avatar
+          </button>
+          <button type="button" class="tab-btn" onclick="switchTab('social',this)">
+            <i class="fas fa-share-alt"></i> Social
+          </button>
+          <button type="button" class="tab-btn" onclick="switchTab('theme',this)">
+            <i class="fas fa-palette"></i> Theme
+          </button>
+        </div>
+
+        <!-- TAB 1: Basic Info -->
+        <div id="tab-info" class="tab-pane active glass-card" style="padding:1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Card Title</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-tag input-icon"></i>
+              <input asp-for="CardTitle" class="form-control" placeholder="e.g. My Work Card"
+                     oninput="updatePreview()" />
+            </div>
+            <span asp-validation-for="CardTitle" style="color:var(--red);font-size:0.75rem;"></span>
+          </div>
+
+          <div class="form-2col">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <div class="input-icon-wrap">
+                <i class="fas fa-user input-icon"></i>
+                <input asp-for="FullName" class="form-control" placeholder="John Doe"
+                       oninput="updatePreview()" />
+              </div>
+              <span asp-validation-for="FullName" style="color:var(--red);font-size:0.75rem;"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Job Title</label>
+              <div class="input-icon-wrap">
+                <i class="fas fa-briefcase input-icon"></i>
+                <input asp-for="JobTitle" class="form-control" placeholder="Software Engineer"
+                       oninput="updatePreview()" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-2col">
+            <div class="form-group">
+              <label class="form-label">Company</label>
+              <div class="input-icon-wrap">
+                <i class="fas fa-building input-icon"></i>
+                <input asp-for="Company" class="form-control" placeholder="Company Name" oninput="updatePreview()" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone</label>
+              <div class="input-icon-wrap">
+                <i class="fas fa-phone input-icon"></i>
+                <input asp-for="Phone" class="form-control" placeholder="+91 00000 00000" oninput="updatePreview()" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-envelope input-icon"></i>
+              <input asp-for="Email" class="form-control" placeholder="you@company.com" oninput="updatePreview()" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Website</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-globe input-icon"></i>
+              <input asp-for="Website" class="form-control" placeholder="https://yourwebsite.com" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Profile Photo</label>
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <div id="photoPreview" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-size:1.5rem;overflow:hidden;flex-shrink:0;">
+                @if (!string.IsNullOrEmpty(Model.ExistingPhoto)) {
+                  <img src="@Model.ExistingPhoto" style="width:100%;height:100%;object-fit:cover;" />
+                } else { <span>📷</span> }
+              </div>
+              <input asp-for="ProfilePhotoFile" type="file" class="form-control" accept="image/*"
+                     onchange="previewPhoto(this)" style="flex:1;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Avatar -->
+        <div id="tab-avatar" class="tab-pane glass-card" style="padding:1.5rem;">
+
+          <div style="margin-bottom:1.5rem;">
+            <label class="form-label" style="margin-bottom:10px;">Choose Avatar Style</label>
+            <div class="avatar-grid">
+              @foreach (var av in new[] { ("style1","🧑","Casual"), ("style2","👩","Professional"), ("style3","🧑‍💼","Business"), ("style4","🧑‍🎨","Creative"), ("style5","🧑‍💻","Tech"), ("style6","👨‍🔬","Expert"), ("style7","🧙","Wizard"), ("style8","🦸","Hero") })
+              {
+                <div class="avatar-option @(Model.AvatarStyle == av.Item1 ? "selected" : "")"
+                     onclick="selectAvatar('@av.Item1', this)" title="@av.Item3">
+                  @av.Item2
+                </div>
+              }
+            </div>
+          </div>
+
+          <div style="margin-bottom:1.5rem;">
+            <label class="form-label" style="margin-bottom:10px;">Skin Tone</label>
+            <div class="skin-row">
+              @foreach (var (tone, color) in new[] { ("light","#f7d9c4"), ("medium","#e8b89a"), ("tan","#c8956c"), ("dark","#8d5524"), ("deep","#4a2912") })
+              {
+                <div class="skin-dot @(Model.AvatarSkinTone == tone ? "selected" : "")"
+                     style="background:@color;" onclick="selectSkin('@tone', this)" title="@tone"></div>
+              }
+            </div>
+          </div>
+
+          <div style="margin-bottom:1.5rem;">
+            <label class="form-label" style="margin-bottom:10px;">Hair Style</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              @foreach (var h in new[] { "Short", "Long", "Curly", "Bald", "Wavy", "Spiky" })
+              {
+                <button type="button" class="btn btn-ghost btn-sm hair-btn @(Model.AvatarHair == h.ToLower() ? "active-opt" : "")"
+                        onclick="selectOption('hair','@h.ToLower()',this)">
+                  @h
+                </button>
+              }
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label" style="margin-bottom:10px;">Outfit</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              @foreach (var o in new[] { "Business", "Casual", "Formal", "Tech", "Creative", "Sport" })
+              {
+                <button type="button" class="btn btn-ghost btn-sm outfit-btn @(Model.AvatarOutfit == o.ToLower() ? "active-opt" : "")"
+                        onclick="selectOption('outfit','@o.ToLower()',this)">
+                  @o
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: Social Links -->
+        <div id="tab-social" class="tab-pane glass-card" style="padding:1.5rem;">
+          <div class="form-group">
+            <label class="form-label"><i class="fab fa-linkedin" style="color:#0a66c2;margin-right:8px;"></i>LinkedIn</label>
+            <input asp-for="LinkedIn" class="form-control" placeholder="https://linkedin.com/in/username" oninput="updatePreview()" />
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fab fa-twitter" style="color:#1da1f2;margin-right:8px;"></i>Twitter / X</label>
+            <input asp-for="Twitter" class="form-control" placeholder="https://twitter.com/username" oninput="updatePreview()" />
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fab fa-instagram" style="color:#e1306c;margin-right:8px;"></i>Instagram</label>
+            <input asp-for="Instagram" class="form-control" placeholder="https://instagram.com/username" oninput="updatePreview()" />
+          </div>
+        </div>
+
+        <!-- TAB 4: Theme -->
+        <div id="tab-theme" class="tab-pane glass-card" style="padding:1.5rem;">
+          <label class="form-label" style="margin-bottom:16px;">Select Card Theme</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+            @foreach (var (t, label, grad) in new[] {
+              ("cyber","🌊 Cyber Blue","linear-gradient(135deg,#0a0f2e,#0d1b2e)"),
+              ("neon","💜 Neon Violet","linear-gradient(135deg,#0f0f0f,#1a0a2e)"),
+              ("gold","✨ Gold Rush","linear-gradient(135deg,#1a1200,#2d1f00)"),
+              ("matrix","🟢 Matrix Green","linear-gradient(135deg,#001a00,#002200)")
+            })
+            {
+              <div class="theme-card-opt @(Model.CardTheme == t ? "selected-theme" : "")"
+                   onclick="selectTheme('@t', this)"
+                   style="padding:16px;border-radius:14px;cursor:pointer;border:2px solid @(Model.CardTheme == t ? "var(--cyan)" : "rgba(255,255,255,0.08)");background:var(--bg-glass);transition:all 0.2s;">
+                <div style="width:100%;height:50px;border-radius:8px;background:@grad;margin-bottom:10px;"></div>
+                <div style="font-size:0.8rem;font-weight:600;letter-spacing:1px;">@label</div>
+              </div>
+            }
+
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div style="display:flex;gap:10px;margin-top:1.5rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">
+            <i class="fas fa-@(isEdit ? "save" : "magic")"></i>
+            @(isEdit ? "SAVE CHANGES" : "CREATE MY CARD")
+          </button>
+          <a asp-action="Index" asp-controller="Dashboard" class="btn btn-ghost">
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- RIGHT: Live Preview -->
+      <div class="preview-panel animate-in">
+        <div class="glass-card" style="padding:1.5rem;">
+          <div class="section-title" style="margin-bottom:1rem;text-align:center;">LIVE PREVIEW</div>
+
+          <!-- Card Preview -->
+          <div id="liveCard" class="live-card theme-@Model.CardTheme" style="margin-bottom:1rem;">
+            <div class="scan-overlay"></div>
+            <div class="corner-glow"></div>
+
+            <div style="display:flex;align-items:flex-start;gap:14px;">
+              <div id="previewAvatar" class="avatar-3d">
+                @(Model.AvatarStyle == "style1" ? "🧑" : Model.AvatarStyle == "style2" ? "👩" :
+                  Model.AvatarStyle == "style3" ? "🧑‍💼" : Model.AvatarStyle == "style4" ? "🧑‍🎨" :
+                  Model.AvatarStyle == "style5" ? "🧑‍💻" : "🧑")
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div id="prevName" style="font-family:var(--font-display);font-size:0.9rem;font-weight:800;letter-spacing:2px;color:#fff;text-transform:uppercase;">
+                  @(string.IsNullOrEmpty(Model.FullName) ? "YOUR NAME" : Model.FullName.ToUpper())
+                </div>
+                <div id="prevTitle" style="font-size:0.72rem;color:var(--cyan);margin-top:2px;letter-spacing:1px;">
+                  @(string.IsNullOrEmpty(Model.JobTitle) ? "JOB TITLE" : Model.JobTitle)
+                </div>
+                <div id="prevCompany" style="font-size:0.68rem;color:var(--text-muted);margin-top:2px;">
+                  @Model.Company
+                </div>
+              </div>
+              <!-- QR placeholder -->
+              <div style="width:46px;height:46px;background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">⬛</div>
+            </div>
+
+            <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div id="prevEmail" style="font-size:0.65rem;color:var(--text-secondary);">
+                  📧 @(string.IsNullOrEmpty(Model.Email) ? "email@company.com" : Model.Email)
+                </div>
+                <div id="prevPhone" style="font-size:0.65rem;color:var(--text-secondary);margin-top:3px;">
+                  📱 @(string.IsNullOrEmpty(Model.Phone) ? "+91 00000 00000" : Model.Phone)
+                </div>
+              </div>
+              <div class="social-icons-preview" id="prevSocials">
+                @if (!string.IsNullOrEmpty(Model.LinkedIn)) {
+                  <div class="social-icon-dot" style="background:rgba(10,102,194,0.3);color:#0a66c2;">in</div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Twitter)) {
+                  <div class="social-icon-dot" style="background:rgba(29,161,242,0.3);color:#1da1f2;">𝕏</div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Instagram)) {
+                  <div class="social-icon-dot" style="background:rgba(225,48,108,0.3);color:#e1306c;">📸</div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- AR Page Preview hint -->
+          <div style="background:rgba(0,220,255,0.05);border:1px dashed rgba(0,220,255,0.2);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:1.5rem;margin-bottom:6px;">🔮</div>
+            <div style="font-size:0.72rem;color:var(--cyan);letter-spacing:1px;font-weight:700;">AR EXPERIENCE</div>
+            <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">
+              Scanning this card's QR will open a full 3D animated AR experience in the browser
+            </div>
+          </div>
+
+          <!-- Theme indicator -->
+          <div style="margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <span style="font-size:0.7rem;color:var(--text-muted);">THEME:</span>
+            <span id="themeLabel" style="font-size:0.7rem;color:var(--cyan);font-weight:700;letter-spacing:1px;text-transform:uppercase;">@Model.CardTheme</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<style>
+.active-opt { background: var(--cyan-dim) !important; color: var(--cyan) !important; border-color: rgba(0,220,255,0.4) !important; }
+.selected-theme { border-color: var(--cyan) !important; }
+</style>
+
+@section Scripts {
+<script>
+const avatarMap = {
+  style1:'🧑', style2:'👩', style3:'🧑‍💼', style4:'🧑‍🎨',
+  style5:'🧑‍💻', style6:'👨‍🔬', style7:'🧙', style8:'🦸'
+};
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+function selectAvatar(style, el) {
+  document.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('avatarStyleInput').value = style;
+  document.getElementById('previewAvatar').textContent = avatarMap[style] || '🧑';
+}
+
+function selectSkin(tone, el) {
+  document.querySelectorAll('.skin-dot').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('skinToneInput').value = tone;
+}
+
+function selectOption(type, val, el) {
+  const cls = type === 'hair' ? '.hair-btn' : '.outfit-btn';
+  document.querySelectorAll(cls).forEach(b => b.classList.remove('active-opt'));
+  el.classList.add('active-opt');
+  document.getElementById(type === 'hair' ? 'avatarHairInput' : 'avatarOutfitInput').value = val;
+}
+
+function selectTheme(theme, el) {
+  document.querySelectorAll('.theme-card-opt').forEach(t => t.classList.remove('selected-theme'));
+  el.classList.add('selected-theme');
+  document.getElementById('cardThemeInput').value = theme;
+  document.getElementById('themeLabel').textContent = theme.toUpperCase();
+  const card = document.getElementById('liveCard');
+  card.className = 'live-card theme-' + theme;
+}
+
+function updatePreview() {
+  const name = document.querySelector('[name="FullName"]')?.value || 'YOUR NAME';
+  const title = document.querySelector('[name="JobTitle"]')?.value || 'JOB TITLE';
+  const company = document.querySelector('[name="Company"]')?.value || '';
+  const email = document.querySelector('[name="Email"]')?.value || 'email@company.com';
+  const phone = document.querySelector('[name="Phone"]')?.value || '+91 00000 00000';
+  document.getElementById('prevName').textContent = name.toUpperCase();
+  document.getElementById('prevTitle').textContent = title;
+  document.getElementById('prevCompany').textContent = company;
+  document.getElementById('prevEmail').textContent = '📧 ' + email;
+  document.getElementById('prevPhone').textContent = '📱 ' + phone;
+}
+
+function previewPhoto(input) {
+  if (input.files && input.files[0]) {
+    const r = new FileReader();
+    r.onload = e => {
+      const pp = document.getElementById('photoPreview');
+      pp.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+    };
+    r.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+}

@@ -1,0 +1,538 @@
+@model ARBusinessCard.Models.CardViewViewModel
+@{
+    Layout = null; // Standalone page - no nav
+    var card = Model.Card;
+    var themeColors = card.CardTheme switch {
+        "neon"   => ("#7c3aed", "#a78bfa", "rgba(124,58,237,0.15)"),
+        "gold"   => ("#f59e0b", "#fbbf24", "rgba(245,158,11,0.15)"),
+        "matrix" => ("#10b981", "#34d399", "rgba(16,185,129,0.15)"),
+        _        => ("#00dcff", "#67e8f9", "rgba(0,220,255,0.15)")
+    };
+    var (primary, light, glow) = themeColors;
+    var avatarEmoji = card.AvatarStyle switch {
+        "style2" => "👩", "style3" => "🧑‍💼", "style4" => "🧑‍🎨",
+        "style5" => "🧑‍💻", "style6" => "👨‍🔬", "style7" => "🧙", "style8" => "🦸",
+        _ => "🧑"
+    };
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@card.FullName — AR Business Card</title>
+  <meta name="description" content="@card.FullName - @card.JobTitle at @card.Company" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --primary: @primary;
+      --light: @light;
+      --glow: @glow;
+      --bg: #030712;
+      --card-bg: rgba(10,15,35,0.9);
+      --font-d: 'Orbitron', sans-serif;
+      --font-b: 'Rajdhani', sans-serif;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      background: var(--bg);
+      color: #e2e8f0;
+      font-family: var(--font-b);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .grid-layer {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(color-mix(in srgb, var(--primary) 6%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--primary) 6%, transparent) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridMove 20s linear infinite;
+    }
+
+    .orb1, .orb2, .orb3 {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.2;
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+    .orb1 { width:400px;height:400px;background:var(--primary);top:-100px;left:-100px; }
+    .orb2 { width:300px;height:300px;background:#7c3aed;bottom:-50px;right:-50px;animation-delay:-3s; }
+    .orb3 { width:200px;height:200px;background:var(--light);top:40%;left:40%;animation-delay:-5s; }
+
+    /* Particle stars */
+    .stars { position:absolute;inset:0; }
+    .star {
+      position:absolute;
+      background:#fff;
+      border-radius:50%;
+      animation: twinkle var(--dur) ease-in-out infinite;
+    }
+
+    /* Main content */
+    .ar-page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    /* Header bar */
+    .ar-header {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .ar-logo {
+      font-family: var(--font-d);
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      color: var(--primary);
+      text-shadow: 0 0 20px var(--primary);
+    }
+
+    .scan-badge {
+      background: var(--glow);
+      border: 1px solid var(--primary);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--primary);
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+
+    /* Avatar 3D Stage */
+    .avatar-stage {
+      position: relative;
+      width: 180px;
+      height: 220px;
+      margin-bottom: 1rem;
+    }
+
+    .avatar-platform {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 20px;
+      background: radial-gradient(ellipse, var(--primary) 0%, transparent 70%);
+      opacity: 0.4;
+      animation: platformPulse 2s ease-in-out infinite;
+      border-radius: 50%;
+    }
+
+    .avatar-body {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9rem;
+      animation: avatarBob 3s ease-in-out infinite;
+      filter: drop-shadow(0 20px 40px var(--primary));
+      line-height: 1;
+    }
+
+    .hologram-rings {
+      position: absolute;
+      inset: -20px;
+      animation: ringRotate 6s linear infinite;
+    }
+
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid var(--primary);
+      opacity: 0.15;
+    }
+    .ring-1 { inset: 20px; animation: ringPulse 2s ease-in-out infinite; }
+    .ring-2 { inset: 40px; animation: ringPulse 2s ease-in-out infinite 0.5s; }
+    .ring-3 { inset: 60px; animation: ringPulse 2s ease-in-out infinite 1s; }
+
+    /* Data scan lines around avatar */
+    .scan-lines {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .scan-line-h {
+      position: absolute;
+      left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      animation: scanHoriz 3s linear infinite;
+      opacity: 0.5;
+    }
+
+    /* Main Card Panel */
+    .card-panel {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card-bg);
+      border: 1px solid var(--primary);
+      border-radius: 24px;
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 60px @glow;
+      animation: cardReveal 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    .card-glow-bar {
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--primary), var(--light), var(--primary), transparent);
+      animation: barFlow 3s linear infinite;
+    }
+
+    .card-body { padding: 2rem; }
+
+    .name-block { margin-bottom: 1.5rem; }
+
+    .person-name {
+      font-family: var(--font-d);
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      line-height: 1;
+      background: linear-gradient(135deg, #fff 30%, var(--light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .person-title {
+      font-size: 0.85rem;
+      color: var(--primary);
+      letter-spacing: 2px;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+
+    .person-company {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    .divider-line {
+      height: 1px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+      margin: 1.5rem 0;
+      opacity: 0.3;
+    }
+
+    /* Contact info */
+    .contact-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    .contact-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--glow);
+      border: 1px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+    .contact-item a { color: #94a3b8; text-decoration: none; }
+    .contact-item a:hover { color: var(--primary); }
+
+    /* Social row */
+    .social-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .social-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: #94a3b8;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .social-btn:hover {
+      background: var(--glow);
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* QR Section */
+    .qr-section {
+      background: rgba(0,0,0,0.3);
+      border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .qr-container {
+      display: inline-block;
+      background: #fff;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 0 30px var(--glow);
+      animation: qrGlow 2s ease-in-out infinite;
+    }
+
+    .qr-container img { width: 100px; height: 100px; display: block; }
+
+    .qr-label {
+      font-family: var(--font-d);
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      color: var(--primary);
+      margin-top: 12px;
+      text-transform: uppercase;
+    }
+
+    /* Save button */
+    .save-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--light));
+      color: #000;
+      font-family: var(--font-d);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .save-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px var(--glow); color:#000; }
+
+    /* Footer */
+    .ar-footer {
+      margin-top: 2rem;
+      font-size: 0.65rem;
+      color: #334155;
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    /* ── Keyframes ── */
+    @@keyframes gridMove { from { background-position: 0 0; } to { background-position: 60px 60px; } }
+    @@keyframes orbFloat { 0%,100% { transform: translate(0,0); } 33% { transform: translate(30px,-20px); } 66% { transform: translate(-20px,15px); } }
+    @@keyframes twinkle { 0%,100% { opacity:0.2; transform:scale(1); } 50% { opacity:0.8; transform:scale(1.3); } }
+    @@keyframes avatarBob { 0%,100% { transform:translateX(-50%) translateY(0); } 50% { transform:translateX(-50%) translateY(-15px); } }
+    @@keyframes platformPulse { 0%,100% { transform:translateX(-50%) scale(1); opacity:0.4; } 50% { transform:translateX(-50%) scale(1.15); opacity:0.6; } }
+    @@keyframes ringRotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    @@keyframes ringPulse { 0%,100% { opacity:0.08; transform:scale(0.95); } 50% { opacity:0.25; transform:scale(1.05); } }
+    @@keyframes scanHoriz { 0% { top:-10%; } 100% { top:110%; } }
+    @@keyframes barFlow { 0% { background-position:-100% 0; } 100% { background-position:200% 0; } }
+    @@keyframes badgePulse { 0%,100% { box-shadow:0 0 0 rgba(0,220,255,0); } 50% { box-shadow:0 0 15px var(--glow); } }
+    @@keyframes cardReveal { from { opacity:0; transform:translateY(40px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+    @@keyframes qrGlow { 0%,100% { box-shadow:0 0 15px var(--glow); } 50% { box-shadow:0 0 35px var(--primary); } }
+  </style>
+</head>
+<body>
+
+<!-- Animated Background -->
+<div class="bg-scene">
+  <div class="grid-layer"></div>
+  <div class="orb1"></div>
+  <div class="orb2"></div>
+  <div class="orb3"></div>
+  <div class="stars" id="stars"></div>
+</div>
+
+<!-- Main Page -->
+<div class="ar-page">
+
+  <!-- Header -->
+  <div class="ar-header">
+    <div class="ar-logo">AR BUSINESS CARD</div>
+    <div class="scan-badge">⚡ AR EXPERIENCE</div>
+  </div>
+
+  <!-- 3D Avatar Stage -->
+  <div class="avatar-stage">
+    <div class="hologram-rings">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+    </div>
+    <div class="scan-lines">
+      <div class="scan-line-h"></div>
+    </div>
+    <div class="avatar-body">@Html.Raw(avatarEmoji)</div>
+    <div class="avatar-platform"></div>
+  </div>
+
+  <!-- Card Panel -->
+  <div class="card-panel">
+    <div class="card-glow-bar"></div>
+
+    <div class="card-body">
+
+      <!-- Name Block -->
+      <div class="name-block">
+        <div class="person-name">@card.FullName</div>
+        @if (!string.IsNullOrEmpty(card.JobTitle))
+        {
+          <div class="person-title">@card.JobTitle</div>
+        }
+        @if (!string.IsNullOrEmpty(card.Company))
+        {
+          <div class="person-company">🏢 @card.Company</div>
+        }
+      </div>
+
+      <div class="divider-line"></div>
+
+      <!-- Contact Info -->
+      <div class="contact-grid">
+        @if (!string.IsNullOrEmpty(card.Email))
+        {
+          <div class="contact-item">
+            <div class="contact-icon"><i class="fas fa-envelope"></i></div>
+            <a href="mailto:@card.Email">@card.Email</a>
+          </div>
+        }
+        @if (!string.IsNullOrEmpty(card.Phone))
+        {
+          <div class="contact-item">
+            <div class="contact-icon"><i class="fas fa-phone"></i></div>
+            <a href="tel:@card.Phone">@card.Phone</a>
+          </div>
+        }
+        @if (!string.IsNullOrEmpty(card.Website))
+        {
+          <div class="contact-item">
+            <div class="contact-icon"><i class="fas fa-globe"></i></div>
+            <a href="@card.Website" target="_blank">@card.Website</a>
+          </div>
+        }
+      </div>
+
+      <!-- Social Links -->
+      @if (!string.IsNullOrEmpty(card.LinkedIn) || !string.IsNullOrEmpty(card.Twitter) || !string.IsNullOrEmpty(card.Instagram))
+      {
+        <div class="social-row">
+          @if (!string.IsNullOrEmpty(card.LinkedIn))
+          {
+            <a href="@card.LinkedIn" target="_blank" class="social-btn">
+              <i class="fab fa-linkedin"></i> LinkedIn
+            </a>
+          }
+          @if (!string.IsNullOrEmpty(card.Twitter))
+          {
+            <a href="@card.Twitter" target="_blank" class="social-btn">
+              <i class="fab fa-twitter"></i> Twitter
+            </a>
+          }
+          @if (!string.IsNullOrEmpty(card.Instagram))
+          {
+            <a href="@card.Instagram" target="_blank" class="social-btn">
+              <i class="fab fa-instagram"></i> Instagram
+            </a>
+          }
+        </div>
+      }
+
+      <div class="divider-line"></div>
+
+      <!-- QR Code -->
+      @if (!string.IsNullOrEmpty(card.QRCodePath))
+      {
+        <div class="qr-section">
+          <div class="qr-container">
+            <img src="@card.QRCodePath" alt="QR Code" />
+          </div>
+          <div class="qr-label">Scan to share this card</div>
+        </div>
+      }
+
+      <!-- Save Contact Button -->
+      @if (!string.IsNullOrEmpty(card.Email) || !string.IsNullOrEmpty(card.Phone))
+      {
+        <a href="@GenerateVCard(card)" download="@(card.FullName.Replace(" ", "_")).vcf" class="save-btn">
+          <i class="fas fa-address-book"></i> SAVE CONTACT
+        </a>
+      }
+
+    </div>
+  </div>
+
+  <div class="ar-footer">POWERED BY AR BUSINESS CARD • @DateTime.Now.Year</div>
+
+</div>
+
+<script>
+// Generate star particles
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 80; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const size = Math.random() * 2.5 + 0.5;
+  const dur = (Math.random() * 4 + 2) + 's';
+  s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${dur};animation-delay:${Math.random()*5}s`;
+  starsEl.appendChild(s);
+}
+</script>
+
+</body>
+</html>
+
+@functions {
+  string GenerateVCard(ARBusinessCard.Models.Card card) {
+    var vcard = $"data:text/vcard;charset=utf-8,BEGIN:VCARD%0AVERSION:3.0%0AFN:{Uri.EscapeDataString(card.FullName)}%0A";
+    if (!string.IsNullOrEmpty(card.JobTitle)) vcard += $"TITLE:{Uri.EscapeDataString(card.JobTitle)}%0A";
+    if (!string.IsNullOrEmpty(card.Company)) vcard += $"ORG:{Uri.EscapeDataString(card.Company)}%0A";
+    if (!string.IsNullOrEmpty(card.Email)) vcard += $"EMAIL:{Uri.EscapeDataString(card.Email)}%0A";
+    if (!string.IsNullOrEmpty(card.Phone)) vcard += $"TEL:{Uri.EscapeDataString(card.Phone)}%0A";
+    if (!string.IsNullOrEmpty(card.Website)) vcard += $"URL:{Uri.EscapeDataString(card.Website)}%0A";
+    vcard += "END:VCARD";
+    return vcard;
+  }
+}

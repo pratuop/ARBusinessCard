@@ -1,0 +1,295 @@
+@model ARBusinessCard.Models.LoginViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Login";
+}
+
+<style>
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.login-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 960px;
+  width: 100%;
+  min-height: 580px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.7);
+  border: 1px solid var(--border-glow);
+  animation: fadeInUp 0.6s ease;
+}
+
+/* Left Panel */
+.login-left {
+  background: linear-gradient(145deg, #0a0f2e 0%, #120a3a 50%, #0a1a2e 100%);
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-left::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; right: -40px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(0,220,255,0.15), transparent 70%);
+  border-radius: 50%;
+}
+
+.hologram-card {
+  position: relative;
+  width: 260px;
+  height: 160px;
+  margin: 2rem auto;
+  transform-style: preserve-3d;
+  animation: floatCard 4s ease-in-out infinite;
+}
+
+.h-card-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0,220,255,0.15), rgba(124,58,237,0.15));
+  border: 1px solid rgba(0,220,255,0.4);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.h-card-inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.scan-line {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scanLine 2.5s linear infinite;
+  opacity: 0.7;
+}
+
+.h-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: white;
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #fff 30%, var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+.brand-sub {
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+.feature-list { margin-top: 2rem; display: flex; flex-direction: column; gap: 12px; }
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+.feature-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  flex-shrink: 0;
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+/* Right Panel */
+.login-right {
+  background: rgba(10, 15, 35, 0.95);
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-left: 1px solid var(--border-glow);
+}
+
+.login-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #fff;
+  margin-bottom: 0.3rem;
+}
+
+.login-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-bottom: 2rem;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+.register-link {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 1.5rem;
+}
+
+.register-link a {
+  color: var(--cyan);
+  text-decoration: none;
+  font-weight: 600;
+}
+.register-link a:hover { text-decoration: underline; }
+
+/* floatCard & shimmer defined in site.css */
+
+@@media (max-width: 768px) {
+  .login-container { grid-template-columns: 1fr; }
+  .login-left { display: none; }
+}
+</style>
+
+<div class="login-page">
+  <div class="login-container">
+
+    <!-- LEFT: Branding -->
+    <div class="login-left">
+      <div>
+        <div class="brand-title">AR Business<br>Card</div>
+        <div class="brand-sub">Next-Gen Digital Identity</div>
+      </div>
+
+      <div class="hologram-card">
+        <div class="h-card-inner">
+          <div class="scan-line"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div class="h-avatar">👤</div>
+            <div>
+              <div style="font-family:var(--font-display);font-size:0.65rem;color:var(--cyan);letter-spacing:2px;">YOUR NAME</div>
+              <div style="font-size:0.7rem;color:var(--text-muted);">Digital Specialist</div>
+            </div>
+          </div>
+          <div style="font-size:0.65rem;color:var(--text-muted);line-height:1.8;letter-spacing:0.5px;">
+            📧 you@company.com<br>
+            📱 +91 98765 00000
+          </div>
+          <div style="position:absolute;bottom:14px;right:14px;width:36px;height:36px;background:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">⬛</div>
+        </div>
+      </div>
+
+      <div class="feature-list">
+        <div class="feature-item"><span class="feature-dot"></span> Create stunning AR business cards</div>
+        <div class="feature-item"><span class="feature-dot"></span> 3D animated avatar / bitmoji</div>
+        <div class="feature-item"><span class="feature-dot"></span> QR scan → live AR experience</div>
+        <div class="feature-item"><span class="feature-dot"></span> Share with anyone, anywhere</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Login Form -->
+    <div class="login-right">
+      <div class="login-title">WELCOME BACK</div>
+      <div class="login-subtitle">ENTER YOUR CREDENTIALS TO CONTINUE</div>
+
+      @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+      {
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-circle"></i> @Model.ErrorMessage
+        </div>
+      }
+
+      @if (TempData["Success"] != null)
+      {
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+      }
+
+      <form asp-action="Login" asp-controller="Account" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <div class="input-icon-wrap">
+            <i class="fas fa-user input-icon"></i>
+            <input asp-for="Username" class="form-control" placeholder="Enter username" autocomplete="off" />
+          </div>
+          <span asp-validation-for="Username" style="color:var(--red);font-size:0.75rem;"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-icon-wrap">
+            <i class="fas fa-lock input-icon"></i>
+            <input asp-for="Password" type="password" class="form-control" placeholder="Enter password" />
+          </div>
+          <span asp-validation-for="Password" style="color:var(--red);font-size:0.75rem;"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.5rem;">
+          <i class="fas fa-sign-in-alt"></i> ACCESS SYSTEM
+        </button>
+      </form>
+
+      <div class="divider">OR</div>
+
+      <div class="register-link">
+        Don't have an account? <a asp-action="Register" asp-controller="Account">Create One</a>
+      </div>
+    </div>
+
+  </div>
+</div>
