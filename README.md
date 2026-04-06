@@ -79,7 +79,6 @@ dotnet run
 ## 📸 Screenshots
 <img width="1051" height="716" alt="image" src="https://github.com/user-attachments/assets/bc6693fd-e55c-433c-a09c-3b63f1d23f3c" />
 
-
 ---
 
 ## 👨‍💻 Author
